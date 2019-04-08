@@ -57,7 +57,6 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
     // Buffer for time data.
     time_t rawtime;
     struct tm *info;
-    char buffer[80];
 
     // Get current time.
     time( &rawtime );
@@ -66,10 +65,10 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
     // Let's build the actual response now
     int response_length = sprintf(response,
         "%s\n",
-        "Date: %s\n"
-        "Connection: close\n"
-        "Content-Length: %d\n"
-        "Content-Type: %s\n\n"
+        "Date: %s\n",
+        "Connection: close\n",
+        "Content-Length: %d\n",
+        "Content-Type: %s\n\n",
         "%s\n", 
         header,
         asctime(info),
@@ -172,20 +171,31 @@ void handle_http_request(int fd, struct cache *cache)
         return;
     }
 
-
-    ///////////////////
-    // IMPLEMENT ME! //
-    ///////////////////
-
     // Read the three components of the first request line
+
+    // Buffer to hold the method.
+    char method[200];
+    // Buffer to hold the path.
+    char path[8192];
+    // Buffer to hold the HTTP version.
+    char version[8192];
+
+    sscanf(request, "%s %s %s", method, path, version);
 
     // If GET, handle the get endpoints
 
-    //    Check if it's /d20 and handle that special case
-    //    Otherwise serve the requested file by calling get_file()
-
-
+    if (strcmp(method, "GET") == 0) {
+        //    Check if it's /d20 and handle that special case
+        if (strcmp(path, "/d20") == 0) {
+            get_d20(fd);
+        } else {
+        //    Otherwise serve the requested file by calling get_file()
+            get_file(fd, cache, path);
+        }
     // (Stretch) If POST, handle the post request
+    } else {
+        resp_404();
+    }
 }
 
 /**
