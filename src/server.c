@@ -50,13 +50,9 @@
  */
 int send_response(int fd, char *header, char *content_type, void *body, int content_length)
 {
+    // Build HTTP response and store it in response
     const int max_response_size = 262144;
     char response[max_response_size];
-
-    // Build HTTP response and store it in response
-    
-    // Buffer to hold the response data.
-    char response[500000];
 
     // Buffer for time data.
     time_t rawtime;
@@ -68,13 +64,13 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
     info = localtime( &rawtime );
 
     // Let's build the actual response now
-    int response_length = sprintf(response, 
-        "%s \n
-        Date: %s\n
-        Connection: close\n
-        Content-Length: %d\n
-        Content-Type: %s\n\n
-        %s\n", 
+    int response_length = sprintf(response,
+        "%s\n",
+        "Date: %s\n"
+        "Connection: close\n"
+        "Content-Length: %d\n"
+        "Content-Type: %s\n\n"
+        "%s\n", 
         header,
         asctime(info),
         content_length,
