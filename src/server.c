@@ -50,14 +50,27 @@
  */
 int send_response(int fd, char *header, char *content_type, void *body, int content_length)
 {
+    // Build HTTP response and store it in response
     const int max_response_size = 262144;
     char response[max_response_size];
 
-    // Build HTTP response and store it in response
+    // Buffer for time data.
+    time_t rawtime;
+    struct tm *info;
 
-    ///////////////////
-    // IMPLEMENT ME! //
-    ///////////////////
+    // Get current time.
+    time( &rawtime );
+    info = localtime( &rawtime );
+
+    // Let's build the actual response now
+    int response_length = sprintf(response,
+        "%s\n Date: %s\n Connection: close\n Content-Length: %d\n Content-Type: %s\n\n %s\n", 
+        header,
+        asctime(info),
+        content_length,
+        content_type,
+        body
+    );
 
     // Send it all!
     int rv = send(fd, response, response_length, 0);
@@ -76,16 +89,14 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
 void get_d20(int fd)
 {
     // Generate a random number between 1 and 20 inclusive
-    
-    ///////////////////
-    // IMPLEMENT ME! //
-    ///////////////////
+    int rand_num = rand() % 20 + 1;
+
+    // Create string from int.
+    char int_string[5];
+    sprintf(int_string, "%d", rand_num);
 
     // Use send_response() to send it back as text/plain data
-
-    ///////////////////
-    // IMPLEMENT ME! //
-    ///////////////////
+    send_response(fd, "HTTP/1.1 200 OK", "text/plain", int_string, 1);
 }
 
 /**
@@ -153,20 +164,33 @@ void handle_http_request(int fd, struct cache *cache)
         return;
     }
 
-
-    ///////////////////
-    // IMPLEMENT ME! //
-    ///////////////////
-
     // Read the three components of the first request line
+
+    // Buffer to hold the method.
+    char method[200];
+    // Buffer to hold the path.
+    char path[8192];
+    // Buffer to hold the HTTP version.
+    char version[8192];
+
+    sscanf(request, "%s %s %s", method, path, version);
 
     // If GET, handle the get endpoints
 
-    //    Check if it's /d20 and handle that special case
-    //    Otherwise serve the requested file by calling get_file()
-
-
+    if (strcmp(method, "GET") == 0) {
+        //    Check if it's /d20 and handle that special case
+        if (strcmp(path, "/d20") == 0) {
+            printf("here1");
+            get_d20(fd);
+        //    Otherwise serve the requested file by calling get_file()
+        } else {
+            printf("here2");
+            get_file(fd, cache, path);
+        }
     // (Stretch) If POST, handle the post request
+    } else {
+        resp_404(fd);
+    }
 }
 
 /**
