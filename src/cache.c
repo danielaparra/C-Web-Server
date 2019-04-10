@@ -9,9 +9,10 @@
  */
 struct cache_entry *alloc_entry(char *path, char *content_type, void *content, int content_length)
 {
+    printf("here1\n");
     struct cache_entry *entry = malloc(sizeof(struct cache_entry));
     entry->content = malloc(content_length);
-    entry->content = memcpy(entry->path, content, content_length);
+    memcpy(entry->content, content, content_length);
     entry->path = strdup(path);
     entry->content_type = strdup(content_type);
     entry->content_length = content_length;
@@ -149,7 +150,6 @@ void cache_put(struct cache *cache, char *path, char *content_type, void *conten
         // Free the cache entry.
         free_entry(old_tail);
         // Ensure the size counter for the number of entries in the cache is correct.
-        cache->cur_size--;
     }
 }
 
