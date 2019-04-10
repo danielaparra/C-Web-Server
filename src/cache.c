@@ -102,6 +102,8 @@ struct cache *cache_create(int max_size, int hashsize)
     cache->head = cache->tail = NULL;
     cache->max_size = max_size;
     cache->cur_size = 0;
+
+    return cache;
 }
 
 void cache_free(struct cache *cache)
