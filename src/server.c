@@ -135,24 +135,43 @@ void get_file(int fd, struct cache *cache, char *request_path)
     struct file_data *filedata; 
     char *mime_type;
 
-    // Create filepath and load file data.
-    snprintf(filepath, sizeof filepath, "%s%s", SERVER_ROOT, request_path);
-    filedata = file_load(filepath);
 
-    // Check if file data is null and throw 404.
-    if (filedata == NULL) {
-        resp_404(fd);
-        exit(3);
+    // Create filepath.
+    snprintf(filepath, sizeof filepath, "%s%s", SERVER_ROOT, request_path);
+
+    // First check to see if the path to the file is in the cache (use the file path as the key).
+    struct cache_entry *entry = cache_get(cache, filepath);
+
+    // If it's there, serve it back.
+    if (entry != NULL) {
+        // Create send response.
+        send_response(fd, "HTTP/1.1 200 OK", entry->content_type, entry->content, entry->content_length);
+    
+    // If it's not there...
+    } else {
+        // Load file data from disk.
+        filedata = file_load(filepath);
+
+        // Check if file data is null and throw 404.
+        if (filedata == NULL) {
+            resp_404(fd);
+            exit(3);
+        }
+
+        // Get mime type for file path.
+        mime_type = mime_type_get(filepath);
+
+        // Store it in the cache.
+        cache_put(cache, filepath, mime_type, filedata->data, filedata->size);
+
+        // Create send response. 
+        send_response(fd, "HTTP/1.1 200 OK", mime_type, filedata->data, filedata->size);
+
+        // Free and close file.
+        file_free(filedata);
     }
     
-    // Get mime type for file path.
-    mime_type = mime_type_get(filepath);
 
-    // Create send response. 
-    send_response(fd, "HTTP/1.1 200 OK", mime_type, filedata->data, filedata->size);
-
-    // Free and close file.
-    file_free(filedata);
 }
 
 /**
