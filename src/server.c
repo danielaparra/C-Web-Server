@@ -64,7 +64,7 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
 
     // Let's build the actual response now
     int response_length = sprintf(response,
-        "%s\n Date: %s\n Connection: close\n Content-Length: %d\n Content-Type: %s\n\n %s\n", 
+        " %s\n Date: %s Connection: close\n Content-Length: %d\n Content-Type: %s\n\n %s\n", 
         header,
         asctime(info),
         content_length,
@@ -93,10 +93,10 @@ void get_d20(int fd)
 
     // Create string from int.
     char int_string[5];
-    sprintf(int_string, "%d", rand_num);
+    int size = sprintf(int_string, "%d", rand_num);
 
     // Use send_response() to send it back as text/plain data
-    send_response(fd, "HTTP/1.1 200 OK", "text/plain", int_string, 1);
+    send_response(fd, "HTTP/1.1 200 OK", "text/plain", int_string, size);
 }
 
 /**
@@ -130,9 +130,29 @@ void resp_404(int fd)
  */
 void get_file(int fd, struct cache *cache, char *request_path)
 {
-    ///////////////////
-    // IMPLEMENT ME! //
-    ///////////////////
+    // Initialize a few variables for send_response.
+    char filepath[4096];
+    struct file_data *filedata; 
+    char *mime_type;
+
+    // Create filepath and load file data.
+    snprintf(filepath, sizeof filepath, "%s%s", SERVER_ROOT, request_path);
+    filedata = file_load(filepath);
+
+    // Check if file data is null and throw 404.
+    if (filedata == NULL) {
+        resp_404(fd);
+        exit(3);
+    }
+    
+    // Get mime type for file path.
+    mime_type = mime_type_get(filepath);
+
+    // Create send response. 
+    send_response(fd, "HTTP/1.1 200 OK", mime_type, filedata->data, filedata->size);
+
+    // Free and close file.
+    file_free(filedata);
 }
 
 /**
@@ -180,11 +200,9 @@ void handle_http_request(int fd, struct cache *cache)
     if (strcmp(method, "GET") == 0) {
         //    Check if it's /d20 and handle that special case
         if (strcmp(path, "/d20") == 0) {
-            printf("here1");
             get_d20(fd);
         //    Otherwise serve the requested file by calling get_file()
         } else {
-            printf("here2");
             get_file(fd, cache, path);
         }
     // (Stretch) If POST, handle the post request
