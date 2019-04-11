@@ -9,8 +9,7 @@
  */
 struct cache_entry *alloc_entry(char *path, char *content_type, void *content, int content_length)
 {
-    printf("here1\n");
-    struct cache_entry *entry = malloc(sizeof(struct cache_entry));
+    struct cache_entry *entry = malloc(sizeof(*entry));
     entry->content = malloc(content_length);
     memcpy(entry->content, content, content_length);
     entry->path = strdup(path);

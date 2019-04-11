@@ -64,16 +64,18 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
 
     // Let's build the actual response now
     int response_length = sprintf(response,
-        " %s\n Date: %s Connection: close\n Content-Length: %d\n Content-Type: %s\n\n %s\n", 
-        header,
-        asctime(info),
-        content_length,
-        content_type,
-        body
-    );
+    //   "%s\n Date: %sConnection: close\nContent-Length: %d\nContent-Type: %s\n\n%s\n",
+    "%s\nDate: %sConnection: close\nContent-Length: %d\nContent-Type: %s\n\n",
+    header,
+    asctime(info),
+    content_length,
+    content_type);
+
+    memcpy(response + response_length, body, content_length);
 
     // Send it all!
-    int rv = send(fd, response, response_length, 0);
+    //int rv = send(fd, response, response_length, 0);
+    int rv = send(fd, response, response_length + content_length, 0);
 
     if (rv < 0) {
         perror("send");
@@ -115,7 +117,7 @@ void resp_404(int fd)
     if (filedata == NULL) {
         // TODO: make this non-fatal
         fprintf(stderr, "cannot find system 404 file\n");
-        exit(3);
+        return;
     }
 
     mime_type = mime_type_get(filepath);
@@ -153,9 +155,21 @@ void get_file(int fd, struct cache *cache, char *request_path)
         filedata = file_load(filepath);
 
         // Check if file data is null and throw 404.
-        if (filedata == NULL) {
-            resp_404(fd);
-            exit(3);
+        // if (filedata == NULL) {
+        //     resp_404(fd);
+        //     exit(3);
+        // }
+
+        if (filedata == NULL)
+        {
+            // if file not found, look to see if there's an index.html in the dir
+            sprintf(filepath, "./serverroot/%s%s", request_path, "/index.html");
+            filedata = file_load(filepath);
+            if (filedata == NULL)
+            {
+                resp_404(fd);
+                return;
+            }
         }
 
         // Get mime type for file path.
