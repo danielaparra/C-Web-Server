@@ -155,9 +155,21 @@ void get_file(int fd, struct cache *cache, char *request_path)
         filedata = file_load(filepath);
 
         // Check if file data is null and throw 404.
-        if (filedata == NULL) {
-            resp_404(fd);
-            exit(3);
+        // if (filedata == NULL) {
+        //     resp_404(fd);
+        //     exit(3);
+        // }
+
+        if (filedata == NULL)
+        {
+            // if file not found, look to see if there's an index.html in the dir
+            sprintf(filepath, "./serverroot/%s%s", request_path, "/index.html");
+            filedata = file_load(filepath);
+            if (filedata == NULL)
+            {
+                resp_404(fd);
+                return;
+            }
         }
 
         // Get mime type for file path.
