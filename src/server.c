@@ -64,16 +64,18 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
 
     // Let's build the actual response now
     int response_length = sprintf(response,
-        " %s\n Date: %s Connection: close\n Content-Length: %d\n Content-Type: %s\n\n %s\n", 
-        header,
-        asctime(info),
-        content_length,
-        content_type,
-        body
-    );
+    //   "%s\n Date: %sConnection: close\nContent-Length: %d\nContent-Type: %s\n\n%s\n",
+    "%s\nDate: %sConnection: close\nContent-Length: %d\nContent-Type: %s\n\n",
+    header,
+    asctime(info),
+    content_length,
+    content_type);
+
+    memcpy(response + response_length, body, content_length);
 
     // Send it all!
-    int rv = send(fd, response, response_length, 0);
+    //int rv = send(fd, response, response_length, 0);
+    int rv = send(fd, response, response_length + content_length, 0);
 
     if (rv < 0) {
         perror("send");
