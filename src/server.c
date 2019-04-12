@@ -64,7 +64,6 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
 
     // Let's build the actual response now
     int response_length = sprintf(response,
-    //   "%s\n Date: %sConnection: close\nContent-Length: %d\nContent-Type: %s\n\n%s\n",
     "%s\nDate: %sConnection: close\nContent-Length: %d\nContent-Type: %s\n\n",
     header,
     asctime(info),
@@ -74,7 +73,6 @@ int send_response(int fd, char *header, char *content_type, void *body, int cont
     memcpy(response + response_length, body, content_length);
 
     // Send it all!
-    //int rv = send(fd, response, response_length, 0);
     int rv = send(fd, response, response_length + content_length, 0);
 
     if (rv < 0) {
@@ -95,10 +93,10 @@ void get_d20(int fd)
 
     // Create string from int.
     char int_string[5];
-    int size = sprintf(int_string, "%d", rand_num);
+    sprintf(int_string, "%d\n", rand_num);
 
     // Use send_response() to send it back as text/plain data
-    send_response(fd, "HTTP/1.1 200 OK", "text/plain", int_string, size);
+    send_response(fd, "HTTP/1.1 200 OK", "text/plain", int_string, 2);
 }
 
 /**
@@ -139,7 +137,7 @@ void get_file(int fd, struct cache *cache, char *request_path)
 
 
     // Create filepath.
-    snprintf(filepath, sizeof filepath, "%s%s", SERVER_ROOT, request_path);
+    snprintf(filepath, sizeof filepath, "%s/%s", SERVER_ROOT, request_path + 1);
 
     // First check to see if the path to the file is in the cache (use the file path as the key).
     struct cache_entry *entry = cache_get(cache, filepath);
@@ -154,16 +152,10 @@ void get_file(int fd, struct cache *cache, char *request_path)
         // Load file data from disk.
         filedata = file_load(filepath);
 
-        // Check if file data is null and throw 404.
-        // if (filedata == NULL) {
-        //     resp_404(fd);
-        //     exit(3);
-        // }
-
         if (filedata == NULL)
         {
             // if file not found, look to see if there's an index.html in the dir
-            sprintf(filepath, "./serverroot/%s%s", request_path, "/index.html");
+            sprintf(filepath, "%s%s", SERVER_ROOT, request_path);
             filedata = file_load(filepath);
             if (filedata == NULL)
             {
@@ -232,7 +224,7 @@ void handle_http_request(int fd, struct cache *cache)
 
     if (strcmp(method, "GET") == 0) {
         //    Check if it's /d20 and handle that special case
-        if (strcmp(path, "/d20") == 0) {
+        if (strcmp(path, "\\d20") == 0 || strcmp(path, "/d20") == 0) { 
             get_d20(fd);
         //    Otherwise serve the requested file by calling get_file()
         } else {
